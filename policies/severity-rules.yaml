@@ -1,0 +1,58 @@
+# DriftGuard severity policy.
+# First matching rule wins. Patterns match resource type or full address.
+# Severity levels: critical, high, medium, low.
+# auto_remediable only ever pairs with low severity (see remediator).
+
+rules:
+  # Anything that changes who can reach what is a page, not a digest.
+  - match: "aws_security_group*"
+    severity: critical
+    auto_remediable: false
+    note: Security group changed outside the pipeline. Treat as possible incident.
+
+  - match: "azurerm_network_security_*"
+    severity: critical
+    auto_remediable: false
+    note: NSG changed outside the pipeline. Treat as possible incident.
+
+  - match: "aws_iam_*"
+    severity: critical
+    auto_remediable: false
+    note: IAM drift can be privilege escalation. Review immediately.
+
+  - match: "azurerm_role_*"
+    severity: critical
+    auto_remediable: false
+    note: RBAC drift can be privilege escalation. Review immediately.
+
+  # Data stores: losing one out from under the platform is a bad day.
+  - match: "aws_db_instance*"
+    severity: high
+    auto_remediable: false
+    note: Database configuration drifted. Verify before touching.
+
+  - match: "azurerm_mssql_*"
+    severity: high
+    auto_remediable: false
+    note: Database configuration drifted. Verify before touching.
+
+  - match: "aws_s3_bucket*"
+    severity: high
+    auto_remediable: false
+    note: Bucket drift may affect data exposure or lifecycle costs.
+
+  - match: "azurerm_storage_*"
+    severity: high
+    auto_remediable: false
+    note: Storage drift may affect data exposure or lifecycle costs.
+
+  # Parameters and app settings: important, rarely urgent.
+  - match: "aws_ssm_parameter*"
+    severity: medium
+    auto_remediable: false
+    note: Configuration parameter drifted from code.
+
+  - match: "azurerm_app_*"
+    severity: medium
+    auto_remediable: false
+    note: App configuration drifted from code.
