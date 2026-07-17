@@ -1,0 +1,52 @@
+name: drift-scan
+
+on:
+  schedule:
+    # Nightly at 06:17 UTC. Off the hour on purpose: scheduled load spikes
+    # at :00 are how you build alerting nobody trusts.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: scan (${{ matrix.stack }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        stack: [aws-demo, azure-demo]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Demo mode: no cloud credentials in this public repository, so the
+      # scheduled scan exercises the full pipeline against recorded plan
+      # output. Wiring a real stack is a 3 step change, documented below.
+      - name: Scan recorded plan output
+        run: |
+          python -m guard.cli scan \
+            --plan-json sample_data/plan_drift.json \
+            --stack ${{ matrix.stack }} --no-dedupe --exit-zero \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Real mode (enable per stack):
+      # 1. Configure cloud auth via OIDC:
+      #      aws-actions/configure-aws-credentials with role-to-assume, or
+      #      azure/login with a federated credential.
+      # 2. Produce the plan against unchanged code:
+      #      terraform -chdir=terraform/aws plan -refresh-only -out=drift.tfplan
+      #      terraform -chdir=terraform/aws show -json drift.tfplan > plan.json
+      # 3. Scan for real and publish the metric:
+      #      python -m guard.cli scan --plan-json plan.json --stack aws-prod
+      #      aws cloudwatch put-metric-data --namespace DriftGuard \
+      #        --metric-name CriticalDrift --value $CRITICAL_COUNT \
+      #        --dimensions Stack=aws-prod

@@ -1,0 +1,49 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  scanner:
+    name: scanner tests and demo scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run test suite
+        run: python -m pytest tests -q
+
+      - name: Demo scan against sample drift
+        run: |
+          python -m guard.cli scan \
+            --plan-json sample_data/plan_drift.json \
+            --stack demo --no-dedupe --exit-zero | tee -a "$GITHUB_STEP_SUMMARY"
+
+  terraform:
+    name: terraform validate (${{ matrix.stack }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        stack: [aws, azure]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Init without backend
+        run: terraform -chdir=terraform/${{ matrix.stack }} init -backend=false -input=false
+
+      - name: Validate
+        run: terraform -chdir=terraform/${{ matrix.stack }} validate -no-color
