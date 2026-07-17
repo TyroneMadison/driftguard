@@ -1,0 +1,70 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.8",
+  "resource_changes": [
+    {
+      "address": "aws_security_group.app",
+      "type": "aws_security_group",
+      "name": "app",
+      "change": {
+        "actions": ["update"],
+        "before": {
+          "ingress": [
+            { "from_port": 443, "to_port": 443, "cidr_blocks": ["10.0.0.0/8"] }
+          ],
+          "tags": { "environment": "prod" }
+        },
+        "after": {
+          "ingress": [
+            { "from_port": 443, "to_port": 443, "cidr_blocks": ["10.0.0.0/8"] },
+            { "from_port": 22, "to_port": 22, "cidr_blocks": ["0.0.0.0/0"] }
+          ],
+          "tags": { "environment": "prod" }
+        }
+      }
+    },
+    {
+      "address": "aws_ssm_parameter.feature_flag",
+      "type": "aws_ssm_parameter",
+      "name": "feature_flag",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "/driftguard-demo/feature-flag",
+          "value": "enabled"
+        }
+      }
+    },
+    {
+      "address": "azurerm_storage_account.logs",
+      "type": "azurerm_storage_account",
+      "name": "logs",
+      "change": {
+        "actions": ["update"],
+        "before": {
+          "tags": { "environment": "prod", "owner": "platform" }
+        },
+        "after": {
+          "tags": { "environment": "prod", "owner": "platform", "cost_center": "ops-142" }
+        }
+      }
+    },
+    {
+      "address": "aws_instance.legacy_worker",
+      "type": "aws_instance",
+      "name": "legacy_worker",
+      "change": {
+        "actions": ["delete", "create"],
+        "before": {
+          "instance_type": "t3.large",
+          "ami": "ami-0aaa1111bbb2222cc"
+        },
+        "after": {
+          "instance_type": "t3.large",
+          "ami": "ami-0ddd3333eee4444ff"
+        }
+      }
+    }
+  ]
+}

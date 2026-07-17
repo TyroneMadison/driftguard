@@ -1,0 +1,16 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.8",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.artifacts",
+      "type": "aws_s3_bucket",
+      "name": "artifacts",
+      "change": {
+        "actions": ["no-op"],
+        "before": {},
+        "after": {}
+      }
+    }
+  ]
+}
